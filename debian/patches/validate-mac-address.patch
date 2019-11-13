@@ -23,7 +23,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  #if defined(DHCPv6) && defined(DHCP4o6)
  static int locate_network6(struct packet *packet);
  #endif
-@@ -93,6 +96,9 @@ dhcp (struct packet *packet) {
+@@ -95,6 +98,9 @@ dhcp (struct packet *packet) {
  	const char *errmsg;
  	struct data_string data;
  
@@ -33,7 +33,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  	if (!locate_network(packet) &&
  	    packet->packet_type != DHCPREQUEST &&
  	    packet->packet_type != DHCPINFORM && 
-@@ -282,6 +288,22 @@ dhcp (struct packet *packet) {
+@@ -284,6 +290,22 @@ dhcp (struct packet *packet) {
  		lease_dereference (&lease, MDL);
  }
  

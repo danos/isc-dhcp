@@ -29,7 +29,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  #define BSD_COMP		/* needed on Solaris for SIOCGLIFNUM */
  #include <sys/ioctl.h>
  #include <errno.h>
-@@ -547,6 +551,46 @@ add_ipv6_addr_to_interface(struct interf
+@@ -559,6 +563,46 @@ add_ipv6_addr_to_interface(struct interf
  }
  #endif /* DHCPv6 */
  
@@ -76,7 +76,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  /* Use the SIOCGIFCONF ioctl to get a list of all the attached interfaces.
     For each interface that's of type INET and not the loopback interface,
     register that interface with the network I/O software, figure out what
-@@ -619,7 +663,14 @@ discover_interfaces(int state) {
+@@ -635,7 +679,14 @@ discover_interfaces(int state) {
  		    (!(info.flags & IFF_UP) &&
  		     state != DISCOVER_UNCONFIGURED))
  			continue;

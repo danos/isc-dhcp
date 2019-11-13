@@ -4,7 +4,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 
 --- a/common/discover.c
 +++ b/common/discover.c
-@@ -942,9 +942,10 @@
+@@ -595,9 +595,10 @@
  
  	/* If we already have a list of interfaces, and we're running as
  	   a DHCP server, the interfaces were requested. */
@@ -18,7 +18,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  		ir = 0;
  	else if (state == DISCOVER_UNCONFIGURED)
  		ir = INTERFACE_REQUESTED | INTERFACE_AUTOMATIC;
-@@ -1139,7 +1140,8 @@
+@@ -800,7 +801,8 @@
  		last = tmp;
  
  		/* We must have a subnet declaration for each interface. */
@@ -30,7 +30,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  				log_error("No subnet declaration for %s (%s).",
 --- a/includes/dhcpd.h
 +++ b/includes/dhcpd.h
-@@ -1285,6 +1285,7 @@
+@@ -1407,6 +1407,7 @@
  #define INTERFACE_DOWNSTREAM 8
  #define INTERFACE_UPSTREAM 16
  #define INTERFACE_STREAMS (INTERFACE_DOWNSTREAM | INTERFACE_UPSTREAM)
@@ -40,7 +40,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  	struct client_state *client;
 --- a/server/dhcpd.c
 +++ b/server/dhcpd.c
-@@ -348,7 +348,7 @@
+@@ -554,7 +554,7 @@
  				interface_dereference (&interfaces, MDL);
  			}
  			interface_reference (&interfaces, tmp, MDL);
@@ -49,7 +49,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  		}
  	}
  
-@@ -1237,7 +1237,7 @@
+@@ -1601,7 +1601,7 @@
  		share = subnet -> shared_network;
  		if (ip -> shared_network &&
  		    ip -> shared_network != share) {

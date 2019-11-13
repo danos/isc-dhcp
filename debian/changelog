@@ -1,3 +1,9 @@
+isc-dhcp (4.4.1-2+vyatta2) unstable; urgency=low
+
+  * DANOS Import master
+
+ -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Mon, 04 Nov 2019 17:24:30 +0000
+
 isc-dhcp (4.4.1-2) unstable; urgency=medium
 
   * Set initial address to 0.0.0.0 on hurd (closes: #875566).
@@ -30,6 +36,12 @@ isc-dhcp (4.3.5-4) unstable; urgency=medium
   * Fix build failure caused by bind 9.11.3 (closes: #894093).
 
  -- Michael Gilbert <mgilbert@debian.org>  Sun, 01 Apr 2018 05:37:25 +0000
+
+isc-dhcp (4.3.5-3.1+vyatta3) unstable; urgency=low
+
+  * DANOS Import
+
+ -- Vyatta Package Maintainers <DL-vyatta-help@att.com>  Mon, 04 Nov 2019 11:38:26 +0000
 
 isc-dhcp (4.3.5-3.1) unstable; urgency=medium
 

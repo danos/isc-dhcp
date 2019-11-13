@@ -6,7 +6,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 
 --- a/server/dhcp.c
 +++ b/server/dhcp.c
-@@ -85,6 +85,7 @@ dhcp (struct packet *packet) {
+@@ -98,6 +98,7 @@ dhcp (struct packet *packet) {
  	if (!locate_network(packet) &&
  	    packet->packet_type != DHCPREQUEST &&
  	    packet->packet_type != DHCPINFORM && 

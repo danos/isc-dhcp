@@ -15,7 +15,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 
 --- a/configure.ac
 +++ b/configure.ac
-@@ -161,6 +161,14 @@
+@@ -226,6 +226,14 @@
  		[Define to 1 to use the standard BSD socket API.])
  fi
  
@@ -27,12 +27,12 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 +                [Define to 1 to use fallback sockets sending ack packets in response to renew packets.])
 +fi
 +
- # Try to hnadle incorrect byte order for secs field
+ # Include the PID in the log messages.  This is useful when there may
+ # be multiple instances of a program.
  # This is off by default
- AC_ARG_ENABLE(secs_byteorder,
 --- a/server/dhcp.c
 +++ b/server/dhcp.c
-@@ -3644,6 +3644,7 @@
+@@ -4016,6 +4016,7 @@
  			return;
  		}
  
@@ -40,7 +40,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  	/* If the client is RENEWING, unicast to the client using the
  	   regular IP stack.  Some clients, particularly those that
  	   follow RFC1541, are buggy, and send both ciaddr and server
-@@ -3680,6 +3681,7 @@
+@@ -4052,6 +4053,7 @@
  			lease -> state = (struct lease_state *)0;
  			return;
  		}

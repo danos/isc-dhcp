@@ -23,8 +23,8 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 
 --- a/configure.ac
 +++ b/configure.ac
-@@ -139,6 +139,14 @@
-     enable_delayed_ack="no"
+@@ -151,6 +151,14 @@
+ 		  [Define to queue multiple DHCPACK replies per fsync.])
  fi
  
 +# show packet counters feature support (experimental).
@@ -38,7 +38,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  # DHCPv6 optional compile-time feature.
  AC_ARG_ENABLE(dhcpv6,
  	AS_HELP_STRING([--enable-dhcpv6],[enable support for DHCPv6 (default is yes)]))
-@@ -486,6 +494,11 @@
+@@ -505,6 +513,11 @@
  		        (default is LOCALSTATEDIR/run/dhcrelay6.pid)]),
  	AC_DEFINE_UNQUOTED([_PATH_DHCRELAY6_PID], ["$withval"],
  			   [File for dhcrelay6 process information.]))
@@ -52,7 +52,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  AC_TYPE_INT8_T
 --- a/includes/dhcpd.h
 +++ b/includes/dhcpd.h
-@@ -1522,6 +1522,8 @@
+@@ -1544,6 +1544,8 @@
  #define _PATH_DHCPD_PID		"dhcpd.pid"
  #undef _PATH_DHCPD6_PID
  #define _PATH_DHCPD6_PID	"dhcpd6.pid"
@@ -61,7 +61,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  #else /* !DEBUG */
  
  #ifndef _PATH_DHCPD_CONF
-@@ -1544,6 +1546,10 @@
+@@ -1566,6 +1568,10 @@
  #define _PATH_DHCPD6_PID	LOCALSTATEDIR"/run/dhcpd6.pid"
  #endif
  
@@ -72,7 +72,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  #endif /* DEBUG */
  
  #ifndef _PATH_DHCLIENT_CONF
-@@ -2089,6 +2095,10 @@
+@@ -2138,6 +2144,10 @@
  extern gid_t set_gid;
  #endif
  
@@ -85,7 +85,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  void postdb_startup(void);
 --- a/server/dhcp.c
 +++ b/server/dhcp.c
-@@ -243,6 +243,14 @@
+@@ -245,6 +245,14 @@
  			ms_nulltp = oc->flags & OPTION_HAD_NULLS;
  	}
  
@@ -100,7 +100,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  	/* Classify the client. */
  	classify_client (packet);
  
-@@ -1703,6 +1711,9 @@
+@@ -1752,6 +1760,9 @@
  		to.sin_port = remote_port;
  	}
  
@@ -110,7 +110,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  	/* Report what we're sending. */
  	snprintf(msgbuf, sizeof msgbuf, "DHCPACK to %s (%s) via", piaddr(cip),
  		 (packet->raw->htype && packet->raw->hlen) ?
-@@ -1872,6 +1883,9 @@
+@@ -1928,6 +1939,9 @@
  	if (outgoing.packet_length < BOOTP_MIN_LEN)
  		outgoing.packet_length = BOOTP_MIN_LEN;
  
@@ -120,7 +120,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  	/* Report what we're sending... */
  #if defined(DHCPv6) && defined(DHCP4o6)
  	if (dhcpv4_over_dhcpv6 && (packet->dhcp4o6_response != NULL)) {
-@@ -3879,6 +3893,11 @@
+@@ -3953,6 +3967,11 @@
  	}
  #endif
  
@@ -134,7 +134,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  		  (state -> offer
 --- a/server/dhcpd.c
 +++ b/server/dhcpd.c
-@@ -83,6 +83,10 @@
+@@ -97,6 +97,10 @@
  const char *path_dhcpd_conf = _PATH_DHCPD_CONF;
  const char *path_dhcpd_db = _PATH_DHCPD_DB;
  const char *path_dhcpd_pid = _PATH_DHCPD_PID;
@@ -145,7 +145,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  /* False (default) => we write and use a pid file */
  isc_boolean_t no_pid_file = ISC_FALSE;
  
-@@ -97,6 +101,20 @@
+@@ -111,6 +115,20 @@
  
  char *progname;
  
@@ -166,7 +166,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  static isc_result_t verify_addr (omapi_object_t *l, omapi_addr_t *addr) {
  	return ISC_R_SUCCESS;
  }
-@@ -133,6 +151,39 @@
+@@ -147,6 +165,39 @@
  	omapi_object_dereference (&listener, MDL);
  }
  
@@ -205,11 +205,11 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 +
  #ifndef UNIT_TEST
  
- /*!
-@@ -344,6 +395,12 @@
+ #define DHCPD_USAGE0 \
+@@ -475,6 +526,12 @@
  				usage(use_noarg, argv[i-1]);
  			path_dhcpd_pid = argv [i];
- 			no_dhcpd_pid = 1;
+ 			have_dhcpd_pid = 1;
 +#if defined (PKT_COUNTERS)
 +		} else if (!strcmp (argv [i], "-cntrf")) {
 +			if (++i == argc)
@@ -219,7 +219,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
  		} else if (!strcmp(argv[i], "--no-pid")) {
  			no_pid_file = ISC_TRUE;
                  } else if (!strcmp (argv [i], "-t")) {
-@@ -518,6 +575,10 @@
+@@ -637,6 +694,10 @@
  #endif /* NSUPDATE */
  #endif
  

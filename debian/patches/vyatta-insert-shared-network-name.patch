@@ -3,7 +3,7 @@ Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
 
 --- a/server/db.c
 +++ b/server/db.c
-@@ -128,6 +128,10 @@
+@@ -127,6 +127,10 @@
  	     fprintf(db_file, "\n  ends %s", tval) < 0))
  		++errors;
  

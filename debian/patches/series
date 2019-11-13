@@ -17,3 +17,14 @@ system-bind.patch
 bind-includes.patch
 
 configure.patch
+
+#
+# Vyatta patches
+#
+vyatta-pool-creation.patch
+ignore-network-check-dhcprelease.patch
+validate-mac-address.patch
+vyatta-not-use-fallback-sockets.patch
+vyatta-insert-shared-network-name.patch
+vyatta-pkt-counters.patch
+vyatta-vrf-aware
