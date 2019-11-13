@@ -23,6 +23,8 @@ Files: debian/*
 Copyright:
  2008-2013 Andrew Pollock <apollock@debian.org>
  2011-2015 Michael Gilbert <mgilbert@debian.org>
+ 2012-2017 Brocade Communications Systems, Inc.
+ 2018-2019 AT&T Intellectual Property
 License: ISC
 
 Files: debian/dhcp-lease-list.8

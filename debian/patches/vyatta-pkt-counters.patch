@@ -1,0 +1,232 @@
+Description: SIGUSR1 handler writes DHCP pkt counters to a cntr file.
+  This replaces the old way of getting DHCP pkt counters: logging DHCP pkts
+  received/sent to a trace file while DHCP server is running, then another
+  process parses the trace file to get DHCP pkt counters.
+  .
+  This improves DHCP server performance. Writing to files is a performance
+  bottle neck, especially when DHCP server is processing thousands of
+  packets in a short period of time.
+  .
+  This also improves the performance of the "show dhcp server statistics ..."
+  command. The command used to get DHCP pkt counters by parsing the trace
+  file. The size of the trace file depended on the number of packets
+  sent/received. On the other hand, the cntr file has 8 lines no
+  matter how many packets sent/received.
+Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+
+---
+ configure.ac     |   13 +++++++++++
+ includes/dhcpd.h |   10 +++++++++
+ server/dhcp.c    |   16 ++++++++++++++
+ server/dhcpd.c   |   61 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 100 insertions(+)
+
+--- a/configure.ac
++++ b/configure.ac
+@@ -139,6 +139,14 @@
+     enable_delayed_ack="no"
+ fi
+ 
++# show packet counters feature support (experimental).
++AC_ARG_ENABLE(pkt_counters,
++        AS_HELP_STRING([--enable-pkt-counters],[collect DHCPv4 packet counters (default is no)]))
++if test "$enable_pkt_counters" = "yes"; then
++        AC_DEFINE([PKT_COUNTERS], [1],
++                  [Define to collect DHCPv4 packet counters.])
++fi
++
+ # DHCPv6 optional compile-time feature.
+ AC_ARG_ENABLE(dhcpv6,
+ 	AS_HELP_STRING([--enable-dhcpv6],[enable support for DHCPv6 (default is yes)]))
+@@ -486,6 +494,11 @@
+ 		        (default is LOCALSTATEDIR/run/dhcrelay6.pid)]),
+ 	AC_DEFINE_UNQUOTED([_PATH_DHCRELAY6_PID], ["$withval"],
+ 			   [File for dhcrelay6 process information.]))
++AC_ARG_WITH(srv-cnt-file,
++	AS_HELP_STRING([--with-srv-cntr-file=PATH],[File for dhcpd pkg counters information
++		        (default is LOCALSTATEDIR/run/dhcpd.cntr)]),
++	AC_DEFINE_UNQUOTED([_PATH_DHCPD_CNTR], ["$withval"],
++			   [File for dhcpd pkg counters information.]))
+ 
+ # Check basic types.
+ AC_TYPE_INT8_T
+--- a/includes/dhcpd.h
++++ b/includes/dhcpd.h
+@@ -1522,6 +1522,8 @@
+ #define _PATH_DHCPD_PID		"dhcpd.pid"
+ #undef _PATH_DHCPD6_PID
+ #define _PATH_DHCPD6_PID	"dhcpd6.pid"
++#undef _PATH_DHCPD_CNTR
++#define _PATH_DHCPD_CNTR	"dhcpd.cntr"
+ #else /* !DEBUG */
+ 
+ #ifndef _PATH_DHCPD_CONF
+@@ -1544,6 +1546,10 @@
+ #define _PATH_DHCPD6_PID	LOCALSTATEDIR"/run/dhcpd6.pid"
+ #endif
+ 
++#ifndef _PATH_DHCPD_CNTR
++#define _PATH_DHCPD_CNTR	LOCALSTATEDIR"/run/dhcpd.cntr"
++#endif
++
+ #endif /* DEBUG */
+ 
+ #ifndef _PATH_DHCLIENT_CONF
+@@ -2089,6 +2095,10 @@
+ extern gid_t set_gid;
+ #endif
+ 
++#ifdef PKT_COUNTERS
++extern isc_uint64_t pkt_counters [];
++#endif
++
+ int main(int, char **);
+ void postconf_initialization(int);
+ void postdb_startup(void);
+--- a/server/dhcp.c
++++ b/server/dhcp.c
+@@ -243,6 +243,14 @@
+ 			ms_nulltp = oc->flags & OPTION_HAD_NULLS;
+ 	}
+ 
++#if defined (PKT_COUNTERS)
++	if ((packet -> packet_type <= DHCPINFORM) &&
++	    (packet -> packet_type != DHCPOFFER) &&
++	    (packet -> packet_type != DHCPACK) &&
++	    (packet -> packet_type != DHCPNAK)) {
++		pkt_counters[packet -> packet_type -1]++;
++	}
++#endif
+ 	/* Classify the client. */
+ 	classify_client (packet);
+ 
+@@ -1703,6 +1711,9 @@
+ 		to.sin_port = remote_port;
+ 	}
+ 
++#if defined (PKT_COUNTERS)
++	pkt_counters[DHCPACK -1]++;
++#endif
+ 	/* Report what we're sending. */
+ 	snprintf(msgbuf, sizeof msgbuf, "DHCPACK to %s (%s) via", piaddr(cip),
+ 		 (packet->raw->htype && packet->raw->hlen) ?
+@@ -1872,6 +1883,9 @@
+ 	if (outgoing.packet_length < BOOTP_MIN_LEN)
+ 		outgoing.packet_length = BOOTP_MIN_LEN;
+ 
++#if defined (PKT_COUNTERS)
++	pkt_counters[DHCPNAK -1]++;
++#endif
+ 	/* Report what we're sending... */
+ #if defined(DHCPv6) && defined(DHCP4o6)
+ 	if (dhcpv4_over_dhcpv6 && (packet->dhcp4o6_response != NULL)) {
+@@ -3879,6 +3893,11 @@
+ 	}
+ #endif
+ 
++#if defined (PKT_COUNTERS)
++	if (state -> offer && state -> offer <= DHCPINFORM) {
++		pkt_counters[state -> offer - 1]++;
++	}
++#endif
+ 	/* Say what we're doing... */
+ 	log_info ("%s on %s to %s %s%s%svia %s",
+ 		  (state -> offer
+--- a/server/dhcpd.c
++++ b/server/dhcpd.c
+@@ -83,6 +83,10 @@
+ const char *path_dhcpd_conf = _PATH_DHCPD_CONF;
+ const char *path_dhcpd_db = _PATH_DHCPD_DB;
+ const char *path_dhcpd_pid = _PATH_DHCPD_PID;
++#if defined (PKT_COUNTERS)
++const char *path_dhcpd_cntr = _PATH_DHCPD_CNTR;
++#endif
++
+ /* False (default) => we write and use a pid file */
+ isc_boolean_t no_pid_file = ISC_FALSE;
+ 
+@@ -97,6 +101,20 @@
+ 
+ char *progname;
+ 
++#if defined (PKT_COUNTERS)
++isc_uint64_t pkt_counters[DHCPINFORM] = {0,0,0,0,0,0,0,0};
++static const char *dhcp_pkt_type_names [] = {
++        "DHCPDISCOVER ",
++        "DHCPOFFER ",
++        "DHCPREQUEST ",
++        "DHCPDECLINE ",
++        "DHCPACK ",
++        "DHCPNAK ",
++        "DHCPRELEASE ",
++        "DHCPINFORM "
++};
++#endif
++
+ static isc_result_t verify_addr (omapi_object_t *l, omapi_addr_t *addr) {
+ 	return ISC_R_SUCCESS;
+ }
+@@ -133,6 +151,39 @@
+ 	omapi_object_dereference (&listener, MDL);
+ }
+ 
++#if defined (PKT_COUNTERS)
++#define MAX_COUNTER_SIZE 32
++static void show_pkt_counters(int sig) {
++  int i, file;
++  char buf[MAX_COUNTER_SIZE];
++
++  file = open(path_dhcpd_cntr, O_WRONLY|O_CREAT|O_TRUNC, 0644);
++  if (file >= 0) {
++    for (i = 0; i < DHCPINFORM; i++) {
++      IGNORE_RET(write(file, dhcp_pkt_type_names[i],
++			strlen(dhcp_pkt_type_names[i])));
++      memset(buf, 0, sizeof(buf));
++      snprintf(buf, sizeof(buf), "%lu\n", pkt_counters[i]);
++      IGNORE_RET(write(file, buf, strlen(buf)));
++    }
++    close(file);
++  }
++}
++
++/* Installs a handler for a signal using sigaction */
++static void handle_signal(int sig, void (*handler)(int)) {
++  struct sigaction sa;
++
++  memset(&sa, 0, sizeof(sa));
++  sa.sa_handler = handler;
++  sigfillset(&sa.sa_mask);
++  if (sigaction(sig, &sa, NULL) != 0) {
++    log_debug("handle_signal() failed for signal %d error: %s",
++               sig, strerror(errno));
++  }
++}
++#endif /* PKT_COUNTERS */
++
+ #ifndef UNIT_TEST
+ 
+ /*!
+@@ -344,6 +395,12 @@
+ 				usage(use_noarg, argv[i-1]);
+ 			path_dhcpd_pid = argv [i];
+ 			no_dhcpd_pid = 1;
++#if defined (PKT_COUNTERS)
++		} else if (!strcmp (argv [i], "-cntrf")) {
++			if (++i == argc)
++				usage (use_noarg, argv[i-1]);
++			path_dhcpd_cntr = argv [i];
++#endif /* PKT_COUNTERS */
+ 		} else if (!strcmp(argv[i], "--no-pid")) {
+ 			no_pid_file = ISC_TRUE;
+                 } else if (!strcmp (argv [i], "-t")) {
+@@ -518,6 +575,10 @@
+ #endif /* NSUPDATE */
+ #endif
+ 
++#if defined (PKT_COUNTERS)
++	handle_signal(SIGUSR1, show_pkt_counters);
++#endif /* PKT_COUNTERS */
++
+ #if defined (PARANOIA)
+ 	/* get user and group info if those options were given */
+ 	if (set_user) {

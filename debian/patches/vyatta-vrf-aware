@@ -1,0 +1,94 @@
+Description: vrf aware dhcp server
+  Currently, dhcpd is not vrf aware. The server discover_interfaces
+  scans each broadcast interface and opens a PF_PACKET socket
+  if_register_lpf.  Consequently, dhcpd will receive a dhcp discover
+  request from a dhcp client irrespective of which routing instance
+  the dhcpd is assigned to.
+  .
+  The fix is to make dhcp vrf aware, by checking that the interface
+  vrf corresponds to the dhcp vrf instance. If dhcp is started in the
+  default vrf (vrf is not specified), then only interfaces not configured
+  in any routing instances are considered. The fix applies
+  to the dhcp server and dhcp relay.
+Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+
+---
+ common/discover.c |   53 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 52 insertions(+), 1 deletion(-)
+
+--- a/common/discover.c
++++ b/common/discover.c
+@@ -31,6 +31,10 @@
+ /* length of line we can read from the IF file, 256 is too small in some cases */
+ #define IF_LINE_LENGTH 1024
+ 
++#include <stdlib.h>
++#include <limits.h>
++#include <string.h>
++
+ #define BSD_COMP		/* needed on Solaris for SIOCGLIFNUM */
+ #include <sys/ioctl.h>
+ #include <errno.h>
+@@ -547,6 +551,46 @@ add_ipv6_addr_to_interface(struct interf
+ }
+ #endif /* DHCPv6 */
+ 
++/*
++ * interface_vrf_match
++ *
++ * return true indicates that the interface vrf is the same as the
++ * dhcpd routing instance.
++ */
++static isc_boolean_t
++interface_vrf_match (const char *if_name) {
++	const char *vrf_name = getenv("VYATTA_VRF");
++	char filepath[PATH_MAX + 1];
++	char symlink[PATH_MAX + 1];
++	FILE *fp;
++
++	/* routing domain vrf interface handled by kernel */
++	snprintf(filepath, sizeof(filepath), "/sys/class/net/%s/rdid", if_name);
++	fp = fopen(filepath, "r");
++	if (fp) {
++		fclose(fp);
++		return ISC_TRUE;
++	}
++
++	memset(symlink, 0, sizeof(symlink));
++	snprintf(filepath, sizeof(filepath), "/sys/class/net/%s/master",
++		 if_name);
++	if (readlink(filepath, symlink, PATH_MAX) <= 0)
++		return vrf_name ? ISC_FALSE : ISC_TRUE;
++
++	/* running in a vrf */
++	if (vrf_name) {
++		snprintf(filepath, sizeof(filepath), "../vrf%s", vrf_name);
++		if (strcmp(symlink, filepath) == 0)
++			return ISC_TRUE;
++
++		return ISC_FALSE;
++	}
++
++	/* running in the default vrf */
++	return strstr(symlink, "../vrf") ? ISC_FALSE : ISC_TRUE;
++}
++
+ /* Use the SIOCGIFCONF ioctl to get a list of all the attached interfaces.
+    For each interface that's of type INET and not the loopback interface,
+    register that interface with the network I/O software, figure out what
+@@ -619,7 +663,14 @@ discover_interfaces(int state) {
+ 		    (!(info.flags & IFF_UP) &&
+ 		     state != DISCOVER_UNCONFIGURED))
+ 			continue;
+-		
++
++		/* Skip interfaces which are not in specified VRF */
++		if (!interface_vrf_match(info.name)) {
++			log_info("skipping interface %s, vrf mismatch",
++				 info.name);
++			continue;
++		}
++
+ 		/* If there isn't already an interface by this name,
+ 		   allocate one. */
+ 		if (tmp == NULL) {

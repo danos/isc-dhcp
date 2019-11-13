@@ -5,7 +5,8 @@ dhclient-64bit-time.patch
 dhclient-more-detail.patch
 dhclient-release.patch
 
-dhcrelay-listen.patch
+# remove following patch since it causes relay crash
+#dhcrelay-listen.patch
 
 dhcommon-getifaddrs.patch
 
@@ -23,3 +24,14 @@ system-bind.patch
 CVE-2017-3144.patch
 CVE-2018-5733.patch
 CVE-2018-5732.patch
+
+#
+# Vyatta patches
+#
+vyatta-pool-creation.patch
+ignore-network-check-dhcprelease.patch
+validate-mac-address.patch
+vyatta-not-use-fallback-sockets.patch
+vyatta-insert-shared-network-name.patch
+vyatta-pkt-counters.patch
+vyatta-vrf-aware

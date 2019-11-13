@@ -1,0 +1,58 @@
+Description: Add function to drop illegal MAC addresses.
+Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+
+---
+ server/dhcp.c |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+--- a/server/dhcp.c
++++ b/server/dhcp.c
+@@ -30,12 +30,15 @@
+ #include <errno.h>
+ #include <limits.h>
+ #include <sys/time.h>
++#include <net/ethernet.h>
+ 
+ static void maybe_return_agent_options(struct packet *packet,
+ 				       struct option_state *options);
+ static int reuse_lease (struct packet* packet, struct lease* new_lease,
+ 			struct lease* lease, struct lease_state *state,
+ 			int offer);
++static int valid_mac(const struct packet *packet);
++
+ #if defined(DHCPv6) && defined(DHCP4o6)
+ static int locate_network6(struct packet *packet);
+ #endif
+@@ -93,6 +96,9 @@ dhcp (struct packet *packet) {
+ 	const char *errmsg;
+ 	struct data_string data;
+ 
++        if(!valid_mac(packet))
++            goto out;
++
+ 	if (!locate_network(packet) &&
+ 	    packet->packet_type != DHCPREQUEST &&
+ 	    packet->packet_type != DHCPINFORM && 
+@@ -282,6 +288,22 @@ dhcp (struct packet *packet) {
+ 		lease_dereference (&lease, MDL);
+ }
+ 
++static int valid_mac( const struct packet *packet ) {
++
++    if( packet->raw->htype != ETH_P_802_3 )
++        return 0;
++
++    if( packet->raw->hlen != ETH_ALEN )
++        return 0;
++
++    const char zaddr[6] = {0,};
++    if( ( packet->raw->chaddr[0] & 1 ) ||
++            !memcmp( packet->raw->chaddr, zaddr, ETH_ALEN ) )
++        return 0;
++
++    return 1;
++}
++
+ void dhcpdiscover (packet, ms_nulltp)
+ 	struct packet *packet;
+ 	int ms_nulltp;

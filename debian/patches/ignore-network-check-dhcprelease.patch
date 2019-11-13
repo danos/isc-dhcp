@@ -1,0 +1,16 @@
+Description: Ignore network check when processing DHCPRELEASE
+  Since DHCPRELEASE messages are unicast direct from client to server,
+  none of the fields used to verify the subnet are valid (no agent
+  options & giaddr is zero).
+Author: Vyatta Package Maintainers <DL-vyatta-help@att.com>
+
+--- a/server/dhcp.c
++++ b/server/dhcp.c
+@@ -85,6 +85,7 @@ dhcp (struct packet *packet) {
+ 	if (!locate_network(packet) &&
+ 	    packet->packet_type != DHCPREQUEST &&
+ 	    packet->packet_type != DHCPINFORM && 
++	    packet->packet_type != DHCPRELEASE &&
+ 	    packet->packet_type != DHCPLEASEQUERY) {
+ 		const char *s;
+ 		char typebuf[32];
