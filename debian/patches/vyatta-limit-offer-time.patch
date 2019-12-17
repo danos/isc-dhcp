@@ -1,0 +1,18 @@
+Description: When offering a lease, the lease end time should not
+             exceed the offered expiry time.
+
+---
+ server/dhcp.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/server/dhcp.c
++++ b/server/dhcp.c
+@@ -2988,7 +2988,7 @@ void ack_lease (packet, lease, offer, wh
+ 						 MAX_TIME - 1);
+ 		}
+ 
+-		if (when)
++		if (when && (when < state -> offered_expiry))
+ 			lt -> ends = when;
+ 		else
+ 			lt -> ends = state -> offered_expiry;

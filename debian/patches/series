@@ -28,3 +28,4 @@ vyatta-not-use-fallback-sockets.patch
 vyatta-insert-shared-network-name.patch
 vyatta-pkt-counters.patch
 vyatta-vrf-aware
+vyatta-limit-offer-time.patch
