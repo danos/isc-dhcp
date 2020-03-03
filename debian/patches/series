@@ -29,3 +29,4 @@ vyatta-insert-shared-network-name.patch
 vyatta-pkt-counters.patch
 vyatta-vrf-aware
 vyatta-limit-offer-time.patch
+vyatta-client-stop-avoid-dhcpdiscover

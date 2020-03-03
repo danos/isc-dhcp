@@ -1,0 +1,30 @@
+dhclient: avoid sending DHCPDISCOVER on ExecStop
+
+The systemd ExecStop is executed in the event that the (ExecStart)
+dhclient process is killed or to shutdown the service. The dhclient -x
+option is passed via the ExecStop, which is intended to clean up the
+previous pidfile and exit. However, dhcp reboot is initiated which
+sends out the DHCPDISCOVER before exiting.
+
+The DHCPDISCOVER is received by the DHCP server and the client responds
+to the ICMP Echo Request with a Reply, which is in violation of the DHCP
+server (the client has not released the leased ip address).
+
+The fix is to avoid sending the DHCPDISCOVER which is also in line with
+the equivalent DHCPv6 code implemented in dhclient.c
+
+---
+ client/dhclient.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/client/dhclient.c
++++ b/client/dhclient.c
+@@ -892,7 +892,7 @@
+ 			     client = client->next) {
+ 				if (exit_mode)
+ 					state_stop(client);
+-				if (release_mode)
++				else if (release_mode)
+ 					do_release(client);
+ 				else {
+ 					client->state = S_INIT;
