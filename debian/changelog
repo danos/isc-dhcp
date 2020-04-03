@@ -1,3 +1,13 @@
+isc-dhcp (4.4.1-2+vyatta3) unstable; urgency=medium
+
+  [ Doug McLaggan ]
+  * Limit offered lease end time to lease expiry time
+
+  [ Dewi Morgan ]
+  * dhclient: avoid sending DHCPDISCOVER on ExecStop
+
+ -- Dewi Morgan <morgand@mail.eng.vyatta.net>  Fri, 03 Apr 2020 12:34:01 +0100
+
 isc-dhcp (4.4.1-2+vyatta2) unstable; urgency=low
 
   * DANOS Import master
