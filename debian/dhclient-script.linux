@@ -206,6 +206,9 @@ fi
 run_hook /etc/dhcp/dhclient-enter-hooks
 run_hookdir /etc/dhcp/dhclient-enter-hooks.d
 
+OUTPUT=''
+OVERLAPSCRIPT=/opt/vyatta/sbin/overlap-subnet
+
 # Execute the operation
 case "$reason" in
 
@@ -247,6 +250,16 @@ case "$reason" in
         if [ -z "$old_ip_address" ] ||
            [ "$old_ip_address" != "$new_ip_address" ] ||
            [ "$reason" = "BOUND" ] || [ "$reason" = "REBOOT" ]; then
+            # check whether the new IP address overlaps existing interfaces' subnet.
+            # if subnets overlap, exit immediately.
+            if [ -e "${OVERLAPSCRIPT}" ]; then
+              OUTPUT=$(${OVERLAPSCRIPT} ${new_ip_address}${new_subnet_mask:+/$new_subnet_mask} "${interface}" "${IPCMD}")
+            fi
+            if [ -n "${OUTPUT}" ]; then
+              echo "${new_ip_address}${new_subnet_mask:+/$new_subnet_mask} overlaps ${OUTPUT}\n"
+              reason="OVERLAPSUBNET"
+              exit_with_hooks 2
+            fi
             # new IP has been leased or leased IP changed => set it
             ip -4 addr add ${new_ip_address}${new_subnet_mask:+/$new_subnet_mask} \
                 ${new_broadcast_address:+broadcast $new_broadcast_address} \
