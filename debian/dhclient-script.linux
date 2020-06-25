@@ -253,10 +253,10 @@ case "$reason" in
             # check whether the new IP address overlaps existing interfaces' subnet.
             # if subnets overlap, exit immediately.
             if [ -e "${OVERLAPSCRIPT}" ]; then
-              OUTPUT=$(${OVERLAPSCRIPT} ${new_ip_address}${new_subnet_mask:+/$new_subnet_mask} "${interface}" "${IPCMD}")
+              OUTPUT=$(${OVERLAPSCRIPT} -p ${new_ip_address}${new_subnet_mask:+/$new_subnet_mask} -i "${interface}")
             fi
             if [ -n "${OUTPUT}" ]; then
-              echo "${new_ip_address}${new_subnet_mask:+/$new_subnet_mask} overlaps ${OUTPUT}\n"
+              overlap="${new_ip_address}${new_subnet_mask:+/$new_subnet_mask} overlaps ${OUTPUT}"
               reason="OVERLAPSUBNET"
               exit_with_hooks 2
             fi
@@ -410,6 +410,21 @@ case "$reason" in
         ;;
 
     BOUND6|RENEW6|REBIND6)
+        if [ -z "$old_ip6_address" ] ||
+           [ "$old_ip6_address" != "$new_ip6_address" ] ||
+           [ "$reason" = "BOUND6" ] || [ "$reason" = "RENEW6" ]; then
+            # check whether the new IP address overlaps existing interfaces' subnet.
+            # if subnets overlap, exit immediately.
+            if [ -e "${OVERLAPSCRIPT}" ]; then
+              OUTPUT=$(${OVERLAPSCRIPT} -p ${new_ip6_address} -i "${interface}")
+            fi
+            if [ -n "${OUTPUT}" ]; then
+              overlap="${new_ip6_address} overlaps ${OUTPUT}"
+              reason="OVERLAPSUBNET6"
+              exit_with_hooks 2
+            fi
+        fi
+
         if [ "${new_ip6_address}" ]; then
             # set leased IP
             ip -6 addr add ${new_ip6_address} \
