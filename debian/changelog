@@ -1,3 +1,10 @@
+isc-dhcp (4.4.1-2+vyatta4) unstable; urgency=medium
+
+  * isc-dhcp: add overlap check to the dhclient script
+  * isc-dhcp: client script overlap support for IPv6
+
+ -- Dewi Morgan <dewi.morgan@intl.att.com>  Fri, 03 Jul 2020 15:45:44 +0100
+
 isc-dhcp (4.4.1-2+vyatta3) unstable; urgency=medium
 
   [ Doug McLaggan ]
