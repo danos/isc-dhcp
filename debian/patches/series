@@ -30,3 +30,4 @@ vyatta-pkt-counters.patch
 vyatta-vrf-aware
 vyatta-limit-offer-time.patch
 vyatta-client-stop-avoid-dhcpdiscover
+Fixed_gcc_10_compilation_issues.patch
