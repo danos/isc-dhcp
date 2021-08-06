@@ -31,3 +31,4 @@ vyatta-vrf-aware
 vyatta-limit-offer-time.patch
 vyatta-client-stop-avoid-dhcpdiscover
 Fixed_gcc_10_compilation_issues.patch
+4.4.2.CVE-2021-25217.patch
