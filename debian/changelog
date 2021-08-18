@@ -1,3 +1,11 @@
+isc-dhcp (4.4.1-2+vyatta5) unstable; urgency=medium
+
+  [ Daniel Gollub ]
+  * Backport Debian Bullseye build fixes
+  * Porting of CVE-2021-25217 fix from ISC/Debian
+
+ -- Anthony Dempsey <anthony.dempsey@intl.att.com>  Wed, 18 Aug 2021 14:27:21 +0100
+
 isc-dhcp (4.4.1-2+vyatta4) unstable; urgency=medium
 
   * isc-dhcp: add overlap check to the dhclient script
